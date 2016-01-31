@@ -29,16 +29,16 @@ SECTION .text
 ;------------------------------------------------------------------------------
 ; void add_bitmaps( uint8_t *dst, intptr_t dst_stride,
 ;                   uint8_t *src, intptr_t src_stride,
-;                   intptr_t height, intptr_t width );
+;                   intptr_t width, intptr_t height );
 ;------------------------------------------------------------------------------
 
 INIT_XMM
 cglobal add_bitmaps_x86, 6,7
 .skip_prologue:
-    imul r4, r3
-    add r4, r2
-    PUSH r4
-    mov r4, r3
+    imul r5, r3
+    add r5, r2
+    PUSH r5
+    mov r5, r3
 .height_loop:
     xor r6, r6 ; x offset
 .stride_loop:
@@ -49,10 +49,10 @@ cglobal add_bitmaps_x86, 6,7
 .continue:
     mov byte [r0 + r6], r3b
     inc r6
-    cmp r6, r5
+    cmp r6, r4
     jl .stride_loop ; still in scan line
     add r0, r1
-    add r2, r4
+    add r2, r5
     cmp r2, [rsp]
     jl .height_loop
     ADD rsp, gprsize
@@ -61,7 +61,7 @@ cglobal add_bitmaps_x86, 6,7
 %macro ADD_BITMAPS 0
     cglobal add_bitmaps, 6,7
     .skip_prologue:
-        cmp r5, mmsize
+        cmp r4, mmsize
         %if mmsize == 16
             jl add_bitmaps_x86.skip_prologue
         %else
@@ -70,8 +70,8 @@ cglobal add_bitmaps_x86, 6,7
         %if mmsize == 32
             vzeroupper
         %endif
-        imul r4, r3
-        add r4, r2 ; last address
+        imul r5, r3
+        add r5, r2 ; last address
     .height_loop:
         xor r6, r6 ; x offset
     .stride_loop:
@@ -79,11 +79,11 @@ cglobal add_bitmaps_x86, 6,7
         paddusb m0, [r2 + r6]
         movu [r0 + r6], m0
         add r6, mmsize
-        cmp r6, r5
+        cmp r6, r4
         jl .stride_loop ; still in scan line
         add r0, r1
         add r2, r3
-        cmp r2, r4
+        cmp r2, r5
         jl .height_loop
         RET
 %endmacro
@@ -96,16 +96,16 @@ ADD_BITMAPS
 ;------------------------------------------------------------------------------
 ; void sub_bitmaps( uint8_t *dst, intptr_t dst_stride,
 ;                   uint8_t *src, intptr_t src_stride,
-;                   intptr_t height, intptr_t width );
+;                   intptr_t width, intptr_t height );
 ;------------------------------------------------------------------------------
 
 INIT_XMM
 cglobal sub_bitmaps_x86, 6,10
 .skip_prologue:
-    imul r4, r3
-    add r4, r2 ; last address
-    PUSH r4
-    mov r4, r3
+    imul r5, r3
+    add r5, r2 ; last address
+    PUSH r5
+    mov r5, r3
 .height_loop:
     xor r6, r6 ; x offset
 .stride_loop:
@@ -116,10 +116,10 @@ cglobal sub_bitmaps_x86, 6,10
 .continue:
     mov byte [r0 + r6], r3b
     inc r6
-    cmp r6, r5
+    cmp r6, r4
     jl .stride_loop ; still in scan line
     add r0, r1
-    add r2, r4
+    add r2, r5
     cmp r2, [rsp]
     jl .height_loop
     ADD rsp, gprsize
@@ -130,7 +130,7 @@ cglobal sub_bitmaps_x86, 6,10
 %macro SUB_BITMAPS 0
     cglobal sub_bitmaps, 6,10
     .skip_prologue:
-        cmp r5, mmsize
+        cmp r4, mmsize
         %if mmsize == 16
             jl sub_bitmaps_x86.skip_prologue
         %else
@@ -139,9 +139,9 @@ cglobal sub_bitmaps_x86, 6,10
         %if mmsize == 32
             vzeroupper
         %endif
-        imul r4, r3
-        add r4, r2 ; last address
-        mov r7, r5
+        imul r5, r3
+        add r5, r2 ; last address
+        mov r7, r4
         and r7, -mmsize ; &= (16);
         xor r9, r9
     .height_loop:
@@ -155,7 +155,7 @@ cglobal sub_bitmaps_x86, 6,10
         cmp r6, r7
         jl .stride_loop ; still in scan line
     .stride_loop2
-        cmp r6, r5
+        cmp r6, r4
         jge .finish
         movzx r8, byte [r0 + r6]
         sub r8b, byte [r2 + r6]
@@ -166,7 +166,7 @@ cglobal sub_bitmaps_x86, 6,10
     .finish
         add r0, r1
         add r2, r3
-        cmp r2, r4
+        cmp r2, r5
         jl .height_loop
         RET
 %endmacro
