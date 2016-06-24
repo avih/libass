@@ -95,6 +95,22 @@ void *ass_aligned_alloc(size_t alignment, size_t size)
     return ptr;
 }
 
+void *ass_aligned_calloc(size_t alignment, size_t size)
+{
+    assert(!(alignment & (alignment - 1))); // alignment must be power of 2
+    if (size >= SIZE_MAX - alignment - sizeof(void *))
+        return NULL;
+    char *allocation = calloc(size + sizeof(void *) + alignment - 1, 1);
+    if (!allocation)
+        return NULL;
+    char *ptr = allocation + sizeof(void *);
+    unsigned int misalign = (uintptr_t)ptr & (alignment - 1);
+    if (misalign)
+        ptr += alignment - misalign;
+    *((void **)ptr - 1) = allocation;
+    return ptr;
+}
+
 void ass_aligned_free(void *ptr)
 {
     if (ptr)

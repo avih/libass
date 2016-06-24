@@ -57,6 +57,7 @@ char *ass_strndup(const char *s, size_t n);
 #endif
 
 void *ass_aligned_alloc(size_t alignment, size_t size);
+void *ass_aligned_calloc(size_t alignment, size_t size);
 void ass_aligned_free(void *ptr);
 
 void *ass_realloc_array(void *ptr, size_t nmemb, size_t size);

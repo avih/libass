@@ -127,14 +127,16 @@ void ass_synth_blur(const BitmapEngine *engine, int opaque_box, int be,
     }
 }
 
-static bool alloc_bitmap_buffer(const BitmapEngine *engine, Bitmap *bm, int w, int h)
+static bool alloc_bitmap_buffer(const BitmapEngine *engine, Bitmap *bm, int w, int h,
+                                bool zero)
 {
     unsigned align = 1 << engine->align_order;
     size_t s = ass_align(align, w);
     // Too often we use ints as offset for bitmaps => use INT_MAX.
     if (s > (INT_MAX - 32) / FFMAX(h, 1))
         return false;
-    uint8_t *buf = ass_aligned_alloc(align, s * h + 32);
+    uint8_t *buf = zero ? ass_aligned_calloc(align, s * h + 32) :
+                          ass_aligned_alloc(align, s * h + 32);
     if (!buf)
         return false;
     bm->w = w;
@@ -149,7 +151,7 @@ static Bitmap *alloc_bitmap_raw(const BitmapEngine *engine, int w, int h)
     Bitmap *bm = malloc(sizeof(Bitmap));
     if (!bm)
         return NULL;
-    if (!alloc_bitmap_buffer(engine, bm, w, h)) {
+    if (!alloc_bitmap_buffer(engine, bm, w, h, false)) {
         free(bm);
         return NULL;
     }
@@ -158,10 +160,13 @@ static Bitmap *alloc_bitmap_raw(const BitmapEngine *engine, int w, int h)
 
 Bitmap *alloc_bitmap(const BitmapEngine *engine, int w, int h)
 {
-    Bitmap *bm = alloc_bitmap_raw(engine, w, h);
-    if(!bm)
+    Bitmap *bm = malloc(sizeof(Bitmap));
+    if (!bm)
         return NULL;
-    memset(bm->buffer, 0, bm->stride * bm->h + 32);
+    if (!alloc_bitmap_buffer(engine, bm, w, h, true)) {
+        free(bm);
+        return NULL;
+    }
     bm->left = bm->top = 0;
     return bm;
 }
@@ -169,7 +174,7 @@ Bitmap *alloc_bitmap(const BitmapEngine *engine, int w, int h)
 bool realloc_bitmap(const BitmapEngine *engine, Bitmap *bm, int w, int h)
 {
     uint8_t *old = bm->buffer;
-    if (!alloc_bitmap_buffer(engine, bm, w, h))
+    if (!alloc_bitmap_buffer(engine, bm, w, h, false))
         return false;
     ass_aligned_free(old);
     return true;
